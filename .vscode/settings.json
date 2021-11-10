@@ -1,0 +1,8 @@
+{
+  "files.eol": "\n",
+  "eslint.workingDirectories": [
+    "./app",
+    "./contracts",
+  ],
+  "search.useIgnoreFiles": false
+}
