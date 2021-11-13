@@ -80,7 +80,7 @@ export default function useEscrow() {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
     const txID = `0x${crypto.createHash("sha256").update(`${uuid()}`).update(`${Date.now()}`).digest("hex")}`;
-    await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], utils.formatUnits(amt, 'wei'));
+    await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], amt);
     return txID
   }
 
@@ -98,11 +98,11 @@ export default function useEscrow() {
     return escrowDetails
   }
 
-  const joinTransaction = async (transaction_address: string) => {
+  const joinTransaction = async (transaction_address: string, amt: number) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
     const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-    await escrow.join()
+    await escrow.join({ value: amt })
   }
 
   const releaseTransaction = async (transaction_address: string) => {

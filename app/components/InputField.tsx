@@ -33,12 +33,12 @@ const InputField = ({label, placeholder, icon, currencyDropdown, extraClass, err
         {icon}
       </div>
       <div className="flex flex-row w-full items-center">
-        <input type={type} id={id} name={name} className="quicksand-medium text-ink" onChange={onChange} required/> 
+        <input type={type} id={id} name={name} step={type === 'number' ? '0.01' : undefined} className="quicksand-medium text-ink" onChange={onChange} required/> 
         <div className="quicksand-medium label absolute" style={currencyDropdown && {top: "5px"}}>{label}</div>
       </div> 
       {currencyDropdown && 
       <div className="text-ink quicksand-semibold text-lg" style={{width: "130px"}}>
-        <Select options={options} defaultValue={{value: 'wei', label: 'WEI'}} classNamePrefix="conversion" /> 
+        <Select options={options} defaultValue={{value: 'wei', label: 'WEI'}} classNamePrefix="conversion" name="unit" /> 
       </div> }
     </div>
     {error && <span className="text-error quicksand-medium text-sm">{error}</span>}
