@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+const { ethers } = require("hardhat");
 
 async function main() {
   const SmartEscrow = await ethers.getContractFactory("SmartEscrow");
@@ -6,7 +6,7 @@ async function main() {
 
   await smartEscrow.deployed();
 
-  console.log("Greeter deployed to:", smartEscrow.address);
+  console.log("Smart Escrow deployed to:", smartEscrow.address);
 }
 
 main().catch((error) => {
