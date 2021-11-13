@@ -39,8 +39,6 @@ const Home = () => {
     const amount = document.getElementById("amount").value;
 
     if (!amount) return setCreateError("Please enter an amount");
-    else if (amount < 1000)
-      return setCreateError("Amount must be greater than 1000 ETH");
 
     setShowCreateSpinner(true);
     setTimeout(() => {
@@ -111,7 +109,7 @@ const Home = () => {
                   id="amount"
                   name="amount"
                   icon={<FaEthereum className="text-green text-2xl" />}
-                  suffix="ETH"
+                  currencyDropdown={true}
                   onChange={() => {
                     if (createError) setCreateError();
                   }}
