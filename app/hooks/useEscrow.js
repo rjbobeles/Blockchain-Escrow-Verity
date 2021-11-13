@@ -17,31 +17,31 @@ export default function useEscrow() {
       status: "pending",
       id: "1",
       eth_address: "0xcd231dcls922xks0933mc902mx",
-      seller_id: "123123123",
+      seller: "123123123",
     },
     {
       amount: 36000,
       status: "paid",
       id: "2",
       eth_address: "0xcd231dcls922xks0933mc902mx",
-      seller_id: "123123123",
-      buyer_id: "567567567",
+      seller: "123123123",
+      buyer: "567567567",
     },
     {
       amount: 950000,
       status: "released",
       id: "3",
       eth_address: "0xcd231dcls922xks0933mc902mx",
-      seller_id: "123123123",
-      buyer_id: "567567567",
+      seller: "123123123",
+      buyer: "567567567",
     },
     {
       amount: 8600,
       status: "refunded",
       id: "4",
       eth_address: "0xcd231dcls922xks0933mc902mx",
-      seller_id: "123123123",
-      buyer_id: "567567567",
+      seller: "123123123",
+      buyer: "567567567",
     },
   ];
 
@@ -72,11 +72,11 @@ export default function useEscrow() {
 
   useEffect(() => {
     if (currentTransaction) {
-      if (user.id === currentTransaction.seller_id) {
+      if (user.eth_address === currentTransaction.seller) {
         setViewingAs("seller");
       } else if (
         currentTransaction.status === "pending" ||
-        currentTransaction.buyer_id === user.id
+        currentTransaction.buyer === user.eth_address
       ) {
         setViewingAs("buyer");
       } else {

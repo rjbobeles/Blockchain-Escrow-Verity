@@ -5,7 +5,7 @@ export default function useUserIdentity() {
   const [user, setUser] = useState();
 
   useEffect(() => {
-    setUser({ id: "567567567" });
+    setUser({ eth_address: "567567567" });
   }, []);
 
   return {
