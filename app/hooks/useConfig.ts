@@ -4,9 +4,9 @@ import constate from "constate";
 
 import { useWindowProvider } from "./useWindow";
 
-export default function useWindow() {
+const useWindow = () => {
   const { isWindowLoaded } = useWindowProvider();
-  const [config, setConfig] = useState();
+  const [config, setConfig] = useState<null | { BASE_URL: string, SMART_ESCROW_ADDRESS: string}>(null);
 
   const getConfig = async () => {
     await axios.get("/api/config").then((res) => {
