@@ -118,6 +118,40 @@ input[type="number"] {
   .verity-button--solid:active {
     background-color: #0e8d86;
   }
+  .conversion__control {
+    border-width: 0 !important;
+    box-shadow: none;
+    cursor: pointer;
+  }
+  .conversion__indicator-separator {
+    display: none;
+  }
+  .conversion__value-container {
+    padding: 0;
+  }
+  .conversion__indicator {
+    padding: 0 0 0 6px;
+  }
+  .conversion__menu-list {
+    max-height: 800px;
+  }
+  .conversion__option {
+    cursor: pointer;
+  }
+  .conversion__single-value {
+    text-align: right;
+  }
+  .conversion__menu-list::-webkit-scrollbar {
+    width: 7px;
+  }
+  .conversion__menu-list::-webkit-scrollbar-track {
+    opacity: 0;
+  }
+
+  .conversion__menu-list::-webkit-scrollbar-thumb {
+    background-color: #d6d8e7;
+    border-radius: 50px;
+  }
 }
 
 @media (max-width: 767px) {
