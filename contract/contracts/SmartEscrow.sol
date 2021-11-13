@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Escrow.sol";
 
 contract SmartEscrow is AccessControl {
-  address private _owner;
+  address public _owner;
   bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); 
 
   mapping(string => address) public transactions;
