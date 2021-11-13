@@ -88,22 +88,42 @@ export default function useEscrow() {
     if(!preChecks() || !isSuperAdmin) return
   }
 
-  const joinTransaction = async () => {
-    if(!preChecks()) return   
+  const fetchTransactionDetails = async (transaction_address: string) => {
+    if(!preChecks() || provider === null || signer === null) return
+
+    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+    const escrowDetails = await escrow.escrowInfo()
+
+    setEscrowDetails(escrowDetails)
+    return escrowDetails
   }
 
-  const releaseTransaction = async () => {
-    if(!preChecks()) return
+  const joinTransaction = async (transaction_address: string) => {
+    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+
+    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+    await escrow.join()
   }
 
-  const refundTransaction = async () => {
-    if(!preChecks()) return
+  const releaseTransaction = async (transaction_address: string) => {
+    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+
+    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+    await escrow.release()
+  }
+
+  const refundTransaction = async (transaction_address: string) => {
+    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+
+    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+    await escrow.refund()
   }
 
   return {
     createEscrowTransaction,
     fetchTransactionByAddress,
     fetchTransactionById,
+    fetchTransactionDetails,
     joinTransaction,
     overrideEscrowTransaction,
     refundTransaction,

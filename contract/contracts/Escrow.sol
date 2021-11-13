@@ -11,6 +11,7 @@ contract Escrow is AccessControl {
   enum ReleaseType { none, release, refund, cancel }
 
   event buyerJoined(address Buyer);
+  event balanceRefunded();
   event balanceReleased();
   event transactionOverridden();
 
@@ -74,6 +75,7 @@ contract Escrow is AccessControl {
     require(success, "Transfer failed.");
 
     escrowInfo.escrowStatus = EscrowStatus.released;
+    emit balanceReleased();
   }
 
   function refund() public isSeller isPayable {
@@ -83,6 +85,7 @@ contract Escrow is AccessControl {
     require(success, "Transfer failed.");
 
     escrowInfo.escrowStatus = EscrowStatus.refunded;
+    emit balanceRefunded();
   }
 
   function overrideRelease(uint action) public onlyRole(MIDDLEMAN_ROLE) isPayable {
@@ -94,18 +97,24 @@ contract Escrow is AccessControl {
       require(success, "Transfer failed.");
 
       escrowInfo.escrowStatus = EscrowStatus.cancelled;
+      emit transactionOverridden();
+      emit balanceReleased();
     } 
     else if (rt == ReleaseType.refund) {
       (bool success, ) = payable(escrowInfo.buyer).call{ value: amount }("");
       require(success, "Transfer failed.");
 
       escrowInfo.escrowStatus = EscrowStatus.refunded;
+      emit transactionOverridden();
+      emit balanceRefunded();
     }
     else if (rt == ReleaseType.release) {
       (bool success, ) = payable(escrowInfo.seller).call{ value: amount }("");
       require(success, "Transfer failed.");
 
       escrowInfo.escrowStatus = EscrowStatus.released;
+      emit transactionOverridden();
+      emit balanceReleased();
     }
     else revert("An invalid option was provided.");
   }
