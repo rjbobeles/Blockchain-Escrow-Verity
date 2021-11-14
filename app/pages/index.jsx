@@ -24,6 +24,8 @@ const Home = () => {
   const [viewingAs, setViewingAs] = useState();
   const [detailUnit, setDetailUnit] = useState("WEI");
   const [err, setErr] = useState();
+  const [needsRefresh, setNeedsRefresh] = useState();
+  const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
 
   const {
     createEscrowTransaction,
@@ -64,20 +66,20 @@ const Home = () => {
     setTxAddr();
     setIsTxLoaded(true);
     setTxID(s);
+    setNeedsRefresh(true);
   };
 
   const getTX = async () => {
+    setNeedsRefresh(false);
     const q = document.getElementById("escrow-id").value;
-    setErr();
-    console.log("hello");
-    console.log(q);
-    console.log(txid);
-    console.log(txaddr);
     if (q !== txid && q !== txaddr) {
       console.log("abc");
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
         console.log("world");
         setIsTxLoaded(false);
+        const addr = await fetchTransactionById(q);
+        if (addr === "")
+          return setErr("Sorry, that transaction does not exist.");
         setTxID(q);
       } else if (q.match(/^0x[a-fA-F0-9]{40}$/)) {
         console.log("earth");
@@ -92,21 +94,33 @@ const Home = () => {
     }
   };
 
+  const refreshTX = async () => {
+    const address = await fetchTransactionById(txid);
+    if (address === "0x0" || address === "") return;
+    setTxAddr(address);
+    const details = await fetchTransactionDetails(address);
+    setTx(details);
+    setIsTxLoaded(true);
+    if (needsRefresh) setNeedsRefresh(false);
+    if (statusNeedsRefresh) setStatusNeedsRefresh(false);
+  };
+
   const buttonHandler = async () => {
     console.log(tx["escrowStatus"]);
     if (viewingAs === "buyer") {
       if (tx["escrowStatus"] === 0) {
         await joinTransaction(txaddr, tx["amount"].toString());
+        setStatusNeedsRefresh(true);
       } else if (tx["escrowStatus"] === 1) {
         await releaseTransaction(txaddr);
+        setStatusNeedsRefresh(true);
       }
     } else if (viewingAs === "seller") {
-      console.log("hello");
       if (tx["escrowStatus"] === 0) {
-        console.log("world");
         navigator.clipboard.writeText(txid);
       } else if (tx["escrowStatus"] === 1) {
         await refundTransaction(txaddr);
+        setStatusNeedsRefresh(true);
       }
     }
   };
@@ -267,8 +281,7 @@ const Home = () => {
                         )}
                         {detailUnit === "GWEI" && (
                           <span>
-                            {utils.formatUnits(tx["amount"], "gwei").toString()}{" "}
-                            GWEI
+                            {utils.formatUnits(tx["amount"], 9).toString()} GWEI
                           </span>
                         )}
                         {detailUnit === "ETH" && (
@@ -300,6 +313,11 @@ const Home = () => {
                     value={txaddr ? txaddr : "Waiting for confirmation"}
                     width="w-full"
                     hasCopy={txaddr && true}
+                    needsRefresh={needsRefresh}
+                    onRefresh={() => {
+                      console.log("hello world");
+                      refreshTX();
+                    }}
                   />
                 </div>
                 <div className="w-full text-center">
@@ -309,6 +327,17 @@ const Home = () => {
                     </span>
                   ) : viewingAs === "outsider" ? (
                     ""
+                  ) : statusNeedsRefresh ? (
+                    <Button
+                      label="Refresh"
+                      color="primary"
+                      appearance="solid"
+                      barShadow={true}
+                      onClick={() => {
+                        refreshTX();
+                      }}
+                      showSpinner={false}
+                    />
                   ) : (
                     <Button
                       label={buttonLabel[viewingAs][tx["escrowStatus"]]}
