@@ -115,10 +115,9 @@ const Home = () => {
       const v =
         web3UserAddress[0].toLowerCase() === tx["seller"].toLowerCase()
           ? "seller"
-          : tx["escrowStatus"] == 0 ||
-            tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
-          ? "buyer"
-          : "outsider";
+          : tx["escrowStatus"] == 0 || tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
+            ? "buyer"
+            : "outsider";
       setViewingAs(v);
     }
   }, [isTxLoaded]);
@@ -134,6 +133,7 @@ const Home = () => {
   }, [web3Errors, escrowErrors, txid]);
 
   if (!config) return <div></div>;
+
   return (
     <div className="flex justify-center items-center w-full min-h-screen">
       <main id="verity" className="my-24 md:my-0">
@@ -166,6 +166,7 @@ const Home = () => {
             {web3Errors ? web3Errors : escrowErrors}
           </div>
         )}
+
         {isWeb3AccountsLoaded ? (
           <div className="flex flex-col items-center md:items-stretch md:flex-row justify-between">
             <div className="card order-2 md:order-1 flex flex-row items-stretch">
@@ -273,54 +274,6 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {/* <div className="card order-2 md:order-1 flex flex-col items-stretch">
-            <Button
-              label="Connect Wallet"
-              type="submit"
-              color="primary"
-              appearance="solid"
-              barShadow={true}
-              onClick={() => connectWeb3Wallet()}
-            />
-
-            <Button
-              label="Create Escrow"
-              type="submit"
-              color="primary"
-              appearance="solid"
-              barShadow={true}
-              onClick={async () => {
-                const s = await createEscrowTransaction(2, "eth");
-                setTxID(s);
-              }}
-            />
-
-            <Button
-              label="Get by ID"
-              type="submit"
-              color="primary"
-              appearance="solid"
-              barShadow={true}
-              onClick={async () => {
-                console.error(txid);
-                const s = await fetchTransactionById(txid);
-                setTxAddr(s);
-              }}
-            />
-
-            <Button
-              label="Get by Address"
-              type="submit"
-              color="primary"
-              appearance="solid"
-              barShadow={true}
-              onClick={async () => {
-                console.error(txaddr);
-                const s = await fetchTransactionByAddress(txaddr);
-                setTxID2(s);
-              }}
-            />
-          </div> */}
           </div>
         ) : (
           <div className="w-full my-20 flex flex-col items-center text-center">

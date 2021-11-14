@@ -64,23 +64,33 @@ export default function useEscrow() {
   const fetchTransactionByAddress = async (transaction_address: string) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const txID = await smartEscrow.connect(signer).transactions_id(transaction_address);
-    return txID
+    try {
+      return await smartEscrow.connect(signer).transactions_id(transaction_address);
+    } catch (err) {
+      console.error(err)
+    } 
   } 
 
   const fetchTransactionById = async (transaction_id: string) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const address = await smartEscrow.connect(signer).transactions(transaction_id)
-    return address
+    try {
+      return await smartEscrow.connect(signer).transactions(transaction_id)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const createEscrowTransaction = async (amt: number) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const txID = `0x${crypto.createHash("sha256").update(`${uuid()}`).update(`${Date.now()}`).digest("hex")}`;
-    await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], amt);
-    return txID
+    try {
+      const txID = `0x${crypto.createHash("sha256").update(`${uuid()}`).update(`${Date.now()}`).digest("hex")}`;
+      await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], amt);
+      return txID
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const overrideEscrowTransaction = async () => {
@@ -90,32 +100,48 @@ export default function useEscrow() {
   const fetchTransactionDetails = async (transaction_address: string) => {
     if(!preChecks() || provider === null || signer === null) return
 
-    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-    const escrowDetails = await escrow.escrowInfo()
-
-    setEscrowDetails(escrowDetails)
-    return escrowDetails
+    try {
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+      const escrowDetails = await escrow.escrowInfo()
+  
+      setEscrowDetails(escrowDetails)
+      return escrowDetails
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const joinTransaction = async (transaction_address: string, amt: number) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-    await escrow.join({ value: amt })
+    try {
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+      await escrow.join({ value: amt })
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const releaseTransaction = async (transaction_address: string) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-    await escrow.release()
+    try {
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+      await escrow.release()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const refundTransaction = async (transaction_address: string) => {
     if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
 
-    const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-    await escrow.refund()
+    try {
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
+      await escrow.refund()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   return {
