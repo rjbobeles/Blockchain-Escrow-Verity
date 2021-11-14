@@ -17,7 +17,6 @@ export default function useEscrow() {
   const { isWeb3AccountsLoaded, provider, web3UserAddress } = useWeb3Provider();
 
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [viewingAs, setViewingAs] = useState<'Admin' | 'Outsider' | 'Buyer' | 'Seller'>('Outsider'); 
   
   const [escrowDetails, setEscrowDetails] = useState<any>(null);
   const [escrowErrors, setEscrowErrors] = useState<null | string>(null);
@@ -131,7 +130,6 @@ export default function useEscrow() {
     escrowDetails,
     escrowErrors,
     isSuperAdmin,
-    viewingAs,
     setEscrowErrors,
   }
 }
