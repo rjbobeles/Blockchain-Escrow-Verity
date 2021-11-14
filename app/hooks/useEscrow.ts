@@ -16,8 +16,6 @@ export default function useEscrow() {
   const { isWindowLoaded } = useWindowProvider();
   const { isWeb3AccountsLoaded, provider, web3UserAddress } = useWeb3Provider();
 
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
   const [escrowDetails, setEscrowDetails] = useState<any>(null);
   const [escrowErrors, setEscrowErrors] = useState<null | string>(null);
   const [smartEscrow, setSmartEscrow] = useState<null | Contract>(null);
@@ -137,10 +135,6 @@ export default function useEscrow() {
     }
   };
 
-  const overrideEscrowTransaction = async () => {
-    if (!preChecks() || !isSuperAdmin) return;
-  };
-
   const fetchTransactionDetails = async (transaction_address: string) => {
     if (!preChecks() || provider === null || signer === null) return;
 
@@ -221,12 +215,10 @@ export default function useEscrow() {
     fetchTransactionById,
     fetchTransactionDetails,
     joinTransaction,
-    overrideEscrowTransaction,
     refundTransaction,
     releaseTransaction,
     escrowDetails,
     escrowErrors,
-    isSuperAdmin,
     setEscrowErrors,
   };
 }
