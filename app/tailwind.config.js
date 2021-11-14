@@ -12,6 +12,7 @@ module.exports = {
       faded: "#CED2DA",
       silver: "#f8f8fb",
       green: "#28BDA2",
+      "green-light": "#edf8f6",
       white: "#fff",
       "error-light": "#FFEDED",
       error: "#DC3A4D",

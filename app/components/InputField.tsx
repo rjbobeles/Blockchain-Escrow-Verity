@@ -17,11 +17,7 @@ type InputProps = {
 
 const options = [
   {value: 'wei', label: 'WEI'},
-  {value: 'kwei', label: 'KWE'},
-  {value: 'mwei', label: 'MWE'},
-  {value: 'gwei', label: 'GWE'},
-  {value: 'szabo', label: 'SZA'},
-  {value: 'finney', label: 'FIN'},
+  {value: 'gwei', label: 'GWEI'},
   {value: 'ether', label: 'ETH'},
 ]
 

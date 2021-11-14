@@ -17,132 +17,203 @@ export default function useEscrow() {
   const { isWeb3AccountsLoaded, provider, web3UserAddress } = useWeb3Provider();
 
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  
+
   const [escrowDetails, setEscrowDetails] = useState<any>(null);
   const [escrowErrors, setEscrowErrors] = useState<null | string>(null);
   const [smartEscrow, setSmartEscrow] = useState<null | Contract>(null);
   const [signer, setSigner] = useState<null | Signer>(null);
 
   useEffect(() => {
-    if(provider !== null && config !== null) {
-      setSmartEscrow(new Contract(config.SMART_ESCROW_ADDRESS, SmartEscrow.abi))
+    if (provider !== null && config !== null) {
+      setSmartEscrow(
+        new Contract(config.SMART_ESCROW_ADDRESS, SmartEscrow.abi)
+      );
     }
-  }, [provider, config])
+  }, [provider, config]);
 
   useEffect(() => {
-    if(provider !== null) {
-      setSigner(provider.getSigner())
+    if (provider !== null) {
+      setSigner(provider.getSigner());
     }
-  }, [web3UserAddress, provider])
+  }, [web3UserAddress, provider]);
 
-  if(isWindowLoaded && smartEscrow !== null && signer !== null) {
-    smartEscrow.connect(signer).on('escrowTransactionCreated', async (transaction_id, escrowContract, seller, event) => {
-      console.error(event)
-    })
+  if (isWindowLoaded && smartEscrow !== null && signer !== null) {
+    smartEscrow
+      .connect(signer)
+      .on(
+        "escrowTransactionCreated",
+        async (transaction_id, escrowContract, seller, event) => {
+          // console.error(event);
+        }
+      );
 
-    smartEscrow.connect(signer).on('escrowTransactionOveridden', async (transaction_id, escrowContract, event) => {
-      console.error(event)
-    })
+    smartEscrow
+      .connect(signer)
+      .on(
+        "escrowTransactionOveridden",
+        async (transaction_id, escrowContract, event) => {
+          // console.error(event);
+        }
+      );
   }
-    
+
   const preChecks = () => {
     setEscrowErrors(null);
 
-    if(provider === null) {
-      setEscrowErrors('No wallet found. Use a browser that supports ethereum wallets')
-      return false
-    }  
-    
-    if(!isWeb3AccountsLoaded && web3UserAddress.length < 1)  {
-      setEscrowErrors('No account found. Connect your ethereum wallet first.')    
-      return false
+    if (provider === null) {
+      setEscrowErrors(
+        "No wallet found. Use a browser that supports ethereum wallets"
+      );
+      return false;
     }
-      
-    return true
-  }
+
+    if (!isWeb3AccountsLoaded && web3UserAddress.length < 1) {
+      setEscrowErrors("No account found. Connect your ethereum wallet first.");
+      return false;
+    }
+
+    return true;
+  };
 
   const fetchTransactionByAddress = async (transaction_address: string) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      return await smartEscrow.connect(signer).transactions_id(transaction_address);
+      return await smartEscrow
+        .connect(signer)
+        .transactions_id(transaction_address);
     } catch (err) {
-      console.error(err)
-    } 
-  } 
+      console.log(err);
+      console.log("Does not exist");
+      setEscrowErrors("Sorry, that transaction does not exist");
+    }
+  };
 
   const fetchTransactionById = async (transaction_id: string) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      return await smartEscrow.connect(signer).transactions(transaction_id)
+      return await smartEscrow.connect(signer).transactions(transaction_id);
     } catch (err) {
-      console.error(err)
+      console.error(err);
+      console.log("Does not exist");
+      setEscrowErrors("Sorry, that transaction does not exist");
     }
-  }
+  };
 
   const createEscrowTransaction = async (amt: number) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      const txID = `0x${crypto.createHash("sha256").update(`${uuid()}`).update(`${Date.now()}`).digest("hex")}`;
-      await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], amt);
-      return txID
+      const txID = `0x${crypto
+        .createHash("sha256")
+        .update(`${uuid()}`)
+        .update(`${Date.now()}`)
+        .digest("hex")}`;
+      await smartEscrow
+        .connect(signer)
+        .createEscrowTransaction(txID, web3UserAddress[0], amt);
+      return txID;
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   const overrideEscrowTransaction = async () => {
-    if(!preChecks() || !isSuperAdmin) return
-  }
+    if (!preChecks() || !isSuperAdmin) return;
+  };
 
   const fetchTransactionDetails = async (transaction_address: string) => {
-    if(!preChecks() || provider === null || signer === null) return
+    if (!preChecks() || provider === null || signer === null) return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-      const escrowDetails = await escrow.escrowInfo()
-  
-      setEscrowDetails(escrowDetails)
-      return escrowDetails
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(
+        signer
+      );
+      const escrowDetails = await escrow.escrowInfo();
+
+      setEscrowDetails(escrowDetails);
+      return escrowDetails;
     } catch (err) {
-      console.error(err)
+      console.error(err);
+      setEscrowErrors("Sorry, that transaction does not exist");
     }
-  }
+  };
 
   const joinTransaction = async (transaction_address: string, amt: number) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-      await escrow.join({ value: amt })
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(
+        signer
+      );
+      await escrow.join({ value: amt });
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   const releaseTransaction = async (transaction_address: string) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-      await escrow.release()
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(
+        signer
+      );
+      await escrow.release();
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   const refundTransaction = async (transaction_address: string) => {
-    if(!preChecks() || smartEscrow === null || provider === null || signer === null) return
+    if (
+      !preChecks() ||
+      smartEscrow === null ||
+      provider === null ||
+      signer === null
+    )
+      return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer)
-      await escrow.refund()
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(
+        signer
+      );
+      await escrow.refund();
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   return {
     createEscrowTransaction,
@@ -157,7 +228,7 @@ export default function useEscrow() {
     escrowErrors,
     isSuperAdmin,
     setEscrowErrors,
-  }
+  };
 }
 
 const [EscrowProvider, useEscrowProvider] = constate(useEscrow);

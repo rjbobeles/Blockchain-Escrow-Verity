@@ -22,6 +22,7 @@ const Home = () => {
   const [tx, setTx] = useState();
   const [isTxLoaded, setIsTxLoaded] = useState();
   const [viewingAs, setViewingAs] = useState();
+  const [detailUnit, setDetailUnit] = useState("WEI");
   const [err, setErr] = useState();
 
   const {
@@ -46,33 +47,41 @@ const Home = () => {
   const [txaddr, setTxAddr] = useState();
 
   const [createError, setCreateError] = useState();
-  const [showCreateSpinner, setShowCreateSpinner] = useState();
-  const [showTXSpinner, setShowTXSpinner] = useState();
 
   const createTX = async () => {
     setCreateError();
     const amount = document.getElementById("amount").value;
     const unit = document.querySelector('input[name="unit"]').value;
     if (!amount) return setCreateError("Please enter an amount");
-    setShowCreateSpinner(true);
     const amountInWei = utils.parseUnits(amount, unit);
     const s = await createEscrowTransaction(amountInWei);
-    setIsTxLoaded(false);
-    setViewingAs();
+    setTx({
+      amount: amountInWei,
+      escrowStatus: 0,
+      seller: web3UserAddress[0],
+      buyer: "0x0",
+    });
+    setTxAddr();
+    setIsTxLoaded(true);
     setTxID(s);
-    setIsTxLoaded(false);
   };
 
   const getTX = async () => {
     const q = document.getElementById("escrow-id").value;
-    if (q.length === 66) {
-      setTxID(q);
-    } else {
-      const id = await fetchTransactionByAddress(q);
-      if (id === "") return setErr("Sorry, that transaction does not exist.");
-      setTxID(id);
+    setErr();
+    if (q !== txid && q !== txaddr) {
+      if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
+        setIsTxLoaded(false);
+        setTxID(q);
+      } else if (q.match(/^0x[a-fA-F0-9]{40}$/)) {
+        setIsTxLoaded(false);
+        const id = await fetchTransactionByAddress(q);
+        if (id === "") return setErr("Sorry, that transaction does not exist.");
+        setTxID(id);
+      } else {
+        setErr("Invalid ID or address");
+      }
     }
-    setIsTxLoaded(false);
   };
 
   const buttonHandler = async () => {
@@ -95,7 +104,11 @@ const Home = () => {
   };
 
   useEffect(() => {
-    if (txid && !isTxLoaded) {
+    console.log("Fetching details...");
+    console.log(txid);
+    console.log(isTxLoaded);
+    console.log(escrowErrors);
+    if (txid && !isTxLoaded && escrowErrors === null) {
       const fetchDetails = async () => {
         const address = await fetchTransactionById(txid);
         if (address === "0x0" || address === "")
@@ -111,13 +124,14 @@ const Home = () => {
   }, [txid]);
 
   useEffect(() => {
-    if (isTxLoaded) {
+    if (isTxLoaded && escrowErrors === null) {
       const v =
         web3UserAddress[0].toLowerCase() === tx["seller"].toLowerCase()
           ? "seller"
-          : tx["escrowStatus"] == 0 || tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
-            ? "buyer"
-            : "outsider";
+          : tx["escrowStatus"] == 0 ||
+            tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
+          ? "buyer"
+          : "outsider";
       setViewingAs(v);
     }
   }, [isTxLoaded]);
@@ -125,12 +139,6 @@ const Home = () => {
   useEffect(() => {
     if (tx) console.log(tx);
   }, [tx]);
-
-  useEffect(() => {
-    if (web3Errors || escrowErrors || txid) {
-      setShowCreateSpinner(false);
-    }
-  }, [web3Errors, escrowErrors, txid]);
 
   if (!config) return <div></div>;
 
@@ -161,9 +169,9 @@ const Home = () => {
           )}
         </header>
 
-        {(web3Errors || escrowErrors) && (
+        {(web3Errors || escrowErrors || err) && (
           <div className="w-full px-6 py-4 bg-error-light text-error rounded-xl quicksand-medium mb-5">
-            {web3Errors ? web3Errors : escrowErrors}
+            {web3Errors ? web3Errors : escrowErrors ? escrowErrors : err}
           </div>
         )}
 
@@ -203,22 +211,75 @@ const Home = () => {
                   appearance="solid"
                   barShadow={true}
                   onClick={() => {}}
-                  showSpinner={showCreateSpinner}
+                  showSpinner={false}
                 />
               </form>
             </div>
-            {tx && isTxLoaded && viewingAs ? (
+            {tx && isTxLoaded && viewingAs && !escrowErrors ? (
               <div className="card order-1 md:order-2 mb-8 md:mb-0 flex flex-col justify-between">
                 <div className="mb-8">
-                  <Detail
-                    label="Amount"
-                    value={tx["amount"].toLocaleString("en-us") + " WEI"}
-                    width="w-full"
-                  />
+                  <div className="w-full mb-3">
+                    <label className="quicksand text-sidewalk text-sm flex flex-row items-center">
+                      Amount<span className="mx-2">—</span>
+                      <div
+                        className={`${
+                          detailUnit === "WEI" && "bg-green-light text-green"
+                        } quicksand-bold text-xs px-2 rounded-sm cursor-pointer`}
+                        onClick={() => {
+                          setDetailUnit("WEI");
+                        }}
+                      >
+                        WEI
+                      </div>
+                      <div
+                        className={`${
+                          detailUnit === "GWEI" && "bg-green-light text-green"
+                        } quicksand-bold text-xs px-2 rounded-sm cursor-pointer`}
+                        onClick={() => {
+                          setDetailUnit("GWEI");
+                        }}
+                      >
+                        GWEI
+                      </div>
+                      <div
+                        className={`${
+                          detailUnit === "ETH" && "bg-green-light text-green"
+                        } quicksand-bold text-xs px-2 rounded-sm cursor-pointer`}
+                        onClick={() => {
+                          setDetailUnit("ETH");
+                        }}
+                      >
+                        ETH
+                      </div>
+                    </label>
+                    <div className="flex flex-row items-center">
+                      <p className="truncate quicksand-semibold text-lg text-ink">
+                        {detailUnit === "WEI" && (
+                          <span>{tx["amount"].toString()} WEI</span>
+                        )}
+                        {detailUnit === "GWEI" && (
+                          <span>
+                            {utils
+                              .parseUnits(tx["amount"].toString(), "gwei")
+                              .toString()}{" "}
+                            GWEI
+                          </span>
+                        )}
+                        {detailUnit === "ETH" && (
+                          <span>
+                            {utils
+                              .parseUnits(tx["amount"].toString(), "ether")
+                              .toString()}{" "}
+                            ETH
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex flex-col sm:flex-row">
                     <Detail
                       label="Status"
-                      value={status[tx[3]]}
+                      value={status[tx["escrowStatus"]]}
                       width="w-full sm:w-1/2 sm:mr-1"
                     />
                     <Detail
@@ -230,15 +291,15 @@ const Home = () => {
                   </div>
                   <Detail
                     label="ETH Address"
-                    value={txaddr}
+                    value={txaddr ? txaddr : "Waiting for confirmation"}
                     width="w-full"
-                    hasCopy={true}
+                    hasCopy={txaddr && true}
                   />
                 </div>
                 <div className="w-full text-center">
                   {tx["escrowStatus"] > 1 ? (
                     <span className="quicksand-medium text-sidewalk">
-                      {status[tx[3]]}
+                      {status[tx["escrowStatus"]]}
                     </span>
                   ) : viewingAs === "outsider" ? (
                     ""
@@ -257,7 +318,7 @@ const Home = () => {
                       onClick={() => {
                         buttonHandler();
                       }}
-                      showSpinner={showTXSpinner}
+                      showSpinner={false}
                     />
                   )}
                 </div>
@@ -305,120 +366,3 @@ const Home = () => {
 };
 
 export default Home;
-
-/* 
-<div className="flex flex-col items-center md:items-stretch md:flex-row justify-between">
-  <div className="card order-2 md:order-1 flex flex-row items-stretch">
-    
-    <form
-      noValidate="novalidate"
-      className="flex flex-col justify-between"
-      onSubmit={(e) => {
-        e.preventDefault();
-        createTX();
-      }}
-    >
-      <InputField
-        label="Enter amount"
-        type="number"
-        id="amount"
-        name="amount"
-        icon={<FaEthereum className="text-green text-2xl" />}
-        suffix="ETH"
-        onChange={() => {
-          if (createError) setCreateError();
-        }}
-        error={createError}
-      />
-      <div className="my-8 text-center quicksand-medium text-sidewalk text-sm">
-        By creating a transaction, you agree with Verity's{" "}
-        <span className="quicksand-semibold text-green">
-          Terms of Service
-        </span>
-      </div>
-      <Button
-        label="Create transaction"
-        type="submit"
-        color="primary"
-        appearance="solid"
-        barShadow={true}
-        onClick={() => {}}
-        showSpinner={showCreateSpinner}
-      />
-    </form>
-  </div>
-  {currentTransaction && viewingAs ? (
-    <div className="card order-1 md:order-2 mb-8 md:mb-0 flex flex-col justify-between">
-      <div className="mb-8">
-        <Detail
-          label="Amount"
-          value={
-            currentTransaction.amount.toLocaleString("en-us") + " ETH"
-          }
-          width="w-full"
-        />
-        <div className="flex flex-col sm:flex-row">
-          <Detail
-            label="Status"
-            value={currentTransaction.status}
-            width="w-full sm:w-1/2 sm:mr-1"
-          />
-          <Detail
-            label="Link"
-            value={config.BASE_URL + "/?id=" + currentTransaction.id}
-            width="w-full sm:w-1/2 sm:ml-1"
-            hasCopy={true}
-          />
-        </div>
-        <Detail
-          label="ETH Address"
-          value={currentTransaction.eth_address}
-          width="w-full"
-          hasCopy={true}
-        />
-      </div>
-      <div className="w-full text-center">
-        {currentTransaction.status === "released" ? (
-          <span className="quicksand-medium text-sidewalk">
-            Payment released
-          </span>
-        ) : currentTransaction.status === "refunded" ? (
-          <span className="quicksand-medium text-sidewalk">
-            Payment refunded
-          </span>
-        ) : viewingAs === "outsider" ? (
-          ""
-        ) : (
-          <Button
-            label={buttonLabel[viewingAs][currentTransaction.status]}
-            color="primary"
-            appearance={
-              buttonLabel[viewingAs][currentTransaction.status] ===
-              "Cancel"
-                ? "outline"
-                : "solid"
-            }
-            barShadow={
-              buttonLabel[viewingAs][currentTransaction.status] !==
-              "Cancel"
-            }
-            onClick={() => {
-              buttonHandler();
-            }}
-            showSpinner={showTXSpinner}
-          />
-        )}
-      </div>
-    </div>
-  ) : (
-    <div className="card no-transaction-selected order-1 md:order-2 mb-8 md:mb-0 flex flex-col items-center justify-center">
-      <h5 className="quicksand-bold text-xl text-nikko text-center">
-        No transaction selected
-      </h5>
-      <p className="quicksand-medium text-sm text-sidewalk text-center">
-        Create or search for a transaction to get started
-      </p>
-    </div>
-  )}
-</div> 
-*/
