@@ -69,16 +69,24 @@ const Home = () => {
   const getTX = async () => {
     const q = document.getElementById("escrow-id").value;
     setErr();
+    console.log("hello");
+    console.log(q);
+    console.log(txid);
+    console.log(txaddr);
     if (q !== txid && q !== txaddr) {
+      console.log("abc");
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
+        console.log("world");
         setIsTxLoaded(false);
         setTxID(q);
       } else if (q.match(/^0x[a-fA-F0-9]{40}$/)) {
+        console.log("earth");
         setIsTxLoaded(false);
         const id = await fetchTransactionByAddress(q);
         if (id === "") return setErr("Sorry, that transaction does not exist.");
         setTxID(id);
       } else {
+        console.log("xyz");
         setErr("Invalid ID or address");
       }
     }
@@ -259,16 +267,14 @@ const Home = () => {
                         )}
                         {detailUnit === "GWEI" && (
                           <span>
-                            {utils
-                              .parseUnits(tx["amount"].toString(), "gwei")
-                              .toString()}{" "}
+                            {utils.formatUnits(tx["amount"], "gwei").toString()}{" "}
                             GWEI
                           </span>
                         )}
                         {detailUnit === "ETH" && (
                           <span>
                             {utils
-                              .parseUnits(tx["amount"].toString(), "ether")
+                              .formatUnits(tx["amount"], "ether")
                               .toString()}{" "}
                             ETH
                           </span>
