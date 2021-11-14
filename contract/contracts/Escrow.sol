@@ -27,12 +27,19 @@ contract Escrow is AccessControl {
   modifier isJoinable () {
     require(escrowInfo.escrowStatus == EscrowStatus.pending, "This transaction is already active");
     require(escrowInfo.buyer == address(0), "Transaction already has a buyer");
+    require(address(this).balance == 0, "Transaction already has money in it");
     require(msg.value == escrowInfo.amount, "Invalid amount provided");
     _;
   }
 
   modifier isBuyer() {
     require(msg.sender == escrowInfo.buyer, "You are not the buyer");
+    _;
+  }
+
+  modifier isCorrectAmount() {
+    require(address(this).balance == 0, "Invalid A");
+    require(address(this).balance != escrowInfo.amount);
     _;
   }
 
