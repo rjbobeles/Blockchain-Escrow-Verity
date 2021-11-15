@@ -41,16 +41,7 @@ export default function useEscrow() {
       .on(
         "escrowTransactionCreated",
         async (transaction_id, escrowContract, seller, event) => {
-          // console.error(event);
-        }
-      );
-
-    smartEscrow
-      .connect(signer)
-      .on(
-        "escrowTransactionOveridden",
-        async (transaction_id, escrowContract, event) => {
-          // console.error(event);
+          console.error(transaction_id)
         }
       );
   }

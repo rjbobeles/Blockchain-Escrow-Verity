@@ -71,9 +71,9 @@ const Home = () => {
 
   const getTX = async () => {
     setNeedsRefresh(false);
+
     const q = document.getElementById("escrow-id").value;
     if (q !== txid && q !== txaddr) {
-      console.log("abc");
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
         console.log("world");
         setIsTxLoaded(false);
@@ -98,8 +98,10 @@ const Home = () => {
     const address = await fetchTransactionById(txid);
     if (address === "0x0" || address === "") return;
     setTxAddr(address);
+
     const details = await fetchTransactionDetails(address);
     setTx(details);
+    
     setIsTxLoaded(true);
     if (needsRefresh) setNeedsRefresh(false);
     if (statusNeedsRefresh) setStatusNeedsRefresh(false);
@@ -221,7 +223,7 @@ const Home = () => {
                   error={createError}
                 />
                 <div className="my-8 text-center quicksand-medium text-sidewalk text-sm">
-                  By creating a transaction, you agree with Verity's{" "}
+                  By creating a transaction, you agree with Verity{"'s "}
                   <span className="quicksand-semibold text-green">
                     Terms of Service
                   </span>
@@ -281,7 +283,7 @@ const Home = () => {
                         )}
                         {detailUnit === "GWEI" && (
                           <span>
-                            {utils.formatUnits(tx["amount"], 9).toString()} GWEI
+                            {utils.formatUnits(tx["amount"], 9).toString().replace('.0', '')} GWEI
                           </span>
                         )}
                         {detailUnit === "ETH" && (
