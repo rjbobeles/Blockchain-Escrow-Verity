@@ -1,4 +1,4 @@
-# Ethereum Ether Escrow Platform
+# Verity: An Ethereum Ether Escrow Platform
 
 ## Environment Variables
 
