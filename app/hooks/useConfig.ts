@@ -6,7 +6,7 @@ import { useWindowProvider } from "./useWindow";
 
 const useWindow = () => {
   const { isWindowLoaded } = useWindowProvider();
-  const [config, setConfig] = useState<null | { BASE_URL: string, SMART_ESCROW_ADDRESS: string}>(null);
+  const [config, setConfig] = useState<null | { SMART_ESCROW_ADDRESS: string }>(null);
 
   const getConfig = async () => {
     await axios.get("/api/config").then((res) => {

@@ -12,7 +12,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<any>) 
   res.json({
     status: res.statusCode,
     config: {
-      BASE_URL: process.env.BASE_URL ? process.env.BASE_URL : "NO_URL_SET",
       SMART_ESCROW_ADDRESS: process.env.SMART_ESCROW_ADDRESS ? process.env.SMART_ESCROW_ADDRESS : "0x0",
     },
   });
