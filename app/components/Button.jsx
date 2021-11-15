@@ -2,14 +2,7 @@ import React from "react";
 
 import { CircularLoading } from "respinner";
 
-const Button = ({
-  label,
-  onClick,
-  appearance,
-  barShadow,
-  showSpinner,
-  type,
-}) => {
+const Button = ({ label, onClick, appearance, barShadow, showSpinner, type }) => {
   return (
     <button
       onClick={onClick}
@@ -20,9 +13,7 @@ const Button = ({
           : "verity-button--outline border border-green text-green"
       } ${barShadow && "shadow-glow"}`}
     >
-      <span className={`quicksand-medium ${showSpinner && "opacity-0"}`}>
-        {label}
-      </span>
+      <span className={`quicksand-medium ${showSpinner && "opacity-0"}`}>{label}</span>
       {showSpinner && <CircularLoading size={20} className="button-spinner" />}
     </button>
   );

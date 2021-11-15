@@ -1,10 +1,7 @@
 export const buttonLabel = {
-  seller: {
-    pending: "Cancel",
-    paid: "Refund",
-  },
-  buyer: {
-    pending: "Pay",
-    paid: "Release",
-  },
+  seller: ["Copy ID", "Refund"],
+  buyer: ["Pay", "Release"],
+  admin: ["Cancel"],
 };
+
+export const status = ["Pending", "Paid", "Released", "Refunded", "Cancelled"];
