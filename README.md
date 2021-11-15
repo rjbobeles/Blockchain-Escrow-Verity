@@ -2,6 +2,8 @@
 <br/>
 <img src="https://github.com/rjbobeles/Blockchain-Escrow-Verity/blob/main/verity.png?raw=true" width="200"/>
 
+An escrow solution between a buyer and a seller who transact with ethers. The goal is to create a middleman between the two parties to protect both of their interests. This small application will utilize Hardhat, Ethers.js, Next.js as well as Ganache to simulate locally.
+
 ## Environment Variables
 
 ### App
