@@ -9,10 +9,13 @@ import { FiSearch } from "react-icons/fi";
 
 import { buttonLabel, status } from "../lib/constants";
 
+import { CircularLoading } from "respinner";
+
 import { useEscrowProvider } from "../hooks/useEscrow";
 import { useWeb3Provider } from "../hooks/useWeb3";
 import { useConfigProvider } from "../hooks/useConfig";
 
+import { Contract } from "ethers";
 import Escrow from "../contracts/Escrow.sol/Escrow.json";
 
 const Home = () => {
@@ -28,7 +31,9 @@ const Home = () => {
     refundTransaction,
     confirmed,
     setSmartEscrowListen,
+    signer,
   } = useEscrowProvider();
+  const { connectWeb3Wallet, isWeb3AccountsLoaded, web3UserAddress, web3Errors } = useWeb3Provider();
 
   const [tx, setTx] = useState();
   const [isTxLoaded, setIsTxLoaded] = useState();
@@ -36,8 +41,7 @@ const Home = () => {
   const [detailUnit, setDetailUnit] = useState("WEI");
   const [err, setErr] = useState();
   const [refreshing, setRefreshing] = useState();
-  const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
-  const { connectWeb3Wallet, isWeb3AccountsLoaded, web3UserAddress, web3Errors, signer } = useWeb3Provider();
+  const [txRefreshing, setTxRefreshing] = useState();
 
   const [txId, setTxID] = useState();
   const [txAddr, setTxAddr] = useState();
@@ -62,6 +66,7 @@ const Home = () => {
       });
       setTxAddr();
       setIsTxLoaded(true);
+      setViewingAs("seller");
       setTxID(id);
       setRefreshing(true);
     }
@@ -93,26 +98,24 @@ const Home = () => {
 
     const details = await fetchTransactionDetails(address);
     setTx(details);
-
     setIsTxLoaded(true);
-    if (statusNeedsRefresh) setStatusNeedsRefresh(false);
   };
 
   const buttonHandler = async () => {
     if (viewingAs === "buyer") {
       if (tx["escrowStatus"] === 0) {
         await joinTransaction(txAddr, tx["amount"].toString());
-        setStatusNeedsRefresh(true);
+        setTxRefreshing(true);
       } else if (tx["escrowStatus"] === 1) {
         await releaseTransaction(txAddr);
-        setStatusNeedsRefresh(true);
+        setTxRefreshing(true);
       }
     } else if (viewingAs === "seller") {
       if (tx["escrowStatus"] === 0) {
         navigator.clipboard.writeText(txId);
       } else if (tx["escrowStatus"] === 1) {
         await refundTransaction(txAddr);
-        setStatusNeedsRefresh(true);
+        setTxRefreshing(true);
       }
     }
   };
@@ -126,6 +129,7 @@ const Home = () => {
         const details = await fetchTransactionDetails(address);
         setTx(details);
         setIsTxLoaded(true);
+        setEscrowListen(true);
       };
 
       fetchDetails();
@@ -169,22 +173,26 @@ const Home = () => {
   }, [txAddr, setEscrow]);
 
   useEffect(() => {
+    const fetch = async () => {
+      await refreshTX();
+      setTxRefreshing(false);
+    };
     if (signer !== null && escrow !== null) {
       if (escrowListen) {
+        console.log(signer);
+        escrow.connect(signer).on("balanceReleased", async (event) => {
+          console.error("CALLED3");
+          fetch();
+        });
+
         escrow.connect(signer).on("buyerJoined", async (buyer, event) => {
-          console.error("CALLED");
+          console.error("CALLED1");
+          fetch();
         });
 
         escrow.connect(signer).on("balanceRefunded", async (event) => {
-          console.error("CALLED");
-        });
-
-        escrow.connect(signer).on("balanceReleased", async (event) => {
-          console.error("CALLED");
-        });
-
-        escrow.connect(signer).on("transactionOverridden", async (event) => {
-          console.error("CALLED");
+          console.error("CALLED2");
+          fetch();
         });
       } else {
         escrow.connect(signer).removeAllListeners();
@@ -345,17 +353,10 @@ const Home = () => {
                     <span className="quicksand-medium text-sidewalk">{status[tx["escrowStatus"]]}</span>
                   ) : viewingAs === "outsider" ? (
                     ""
-                  ) : statusNeedsRefresh ? (
-                    <Button
-                      label="Refresh"
-                      color="primary"
-                      appearance="solid"
-                      barShadow={true}
-                      onClick={() => {
-                        refreshTX();
-                      }}
-                      showSpinner={false}
-                    />
+                  ) : txRefreshing ? (
+                    <div className="w-full flex justify-center">
+                      <CircularLoading size={20} className="detail-spinner" />
+                    </div>
                   ) : (
                     <Button
                       label={buttonLabel[viewingAs][tx["escrowStatus"]]}

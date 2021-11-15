@@ -162,6 +162,7 @@ export default function useEscrow() {
     setEscrowErrors,
     confirmed,
     setSmartEscrowListen,
+    signer,
   };
 }
 
