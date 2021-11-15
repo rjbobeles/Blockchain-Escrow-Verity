@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import InputField from "../components/InputField";
 import Button from "../components/Button.jsx";
-import Detail from "../components/Detail";
+import Detail from "../components/Detail.jsx";
 import { FaEthereum } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 
@@ -24,7 +24,7 @@ const Home = () => {
   const [viewingAs, setViewingAs] = useState();
   const [detailUnit, setDetailUnit] = useState("WEI");
   const [err, setErr] = useState();
-  const [needsRefresh, setNeedsRefresh] = useState();
+  const [refreshing, setRefreshing] = useState();
   const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
 
   const {
@@ -36,6 +36,8 @@ const Home = () => {
     joinTransaction,
     releaseTransaction,
     refundTransaction,
+    confirmed,
+    setSmartEscrowListen,
   } = useEscrowProvider();
 
   const {
@@ -56,22 +58,22 @@ const Home = () => {
     const unit = document.querySelector('input[name="unit"]').value;
     if (!amount) return setCreateError("Please enter an amount");
     const amountInWei = utils.parseUnits(amount, unit);
-    const s = await createEscrowTransaction(amountInWei);
-    setTx({
-      amount: amountInWei,
-      escrowStatus: 0,
-      seller: web3UserAddress[0],
-      buyer: "0x0",
-    });
-    setTxAddr();
-    setIsTxLoaded(true);
-    setTxID(s);
-    setNeedsRefresh(true);
+    const id = await createEscrowTransaction(amountInWei);
+    if (id) {
+      setTx({
+        amount: amountInWei,
+        escrowStatus: 0,
+        seller: web3UserAddress[0],
+        buyer: "0x0",
+      });
+      setTxAddr();
+      setIsTxLoaded(true);
+      setTxID(id);
+      setRefreshing(true);
+    }
   };
 
   const getTX = async () => {
-    setNeedsRefresh(false);
-
     const q = document.getElementById("escrow-id").value;
     if (q !== txid && q !== txaddr) {
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
@@ -101,9 +103,8 @@ const Home = () => {
 
     const details = await fetchTransactionDetails(address);
     setTx(details);
-    
+
     setIsTxLoaded(true);
-    if (needsRefresh) setNeedsRefresh(false);
     if (statusNeedsRefresh) setStatusNeedsRefresh(false);
   };
 
@@ -164,11 +165,29 @@ const Home = () => {
     if (tx) console.log(tx);
   }, [tx]);
 
+  useEffect(() => {
+    if (isWeb3AccountsLoaded) {
+      location.reload();
+    }
+  }, [web3UserAddress]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      await refreshTX();
+      setRefreshing(false);
+      setSmartEscrowListen(false);
+    };
+
+    if (txid && confirmed === txid) {
+      fetch();
+    }
+  }, [confirmed]);
+
   if (!config) return <div></div>;
 
   return (
     <div className="flex justify-center items-center w-full min-h-screen">
-      <main id="verity" className="my-24 md:my-0">
+      <main id="verity" className="my-24 md:mt-0 md:mb-36">
         <header className="w-full flex flex-col md:flex-row justify-start md:justify-between mb-8 items-start md:items-end">
           <h3 className="text-ink pacifico text-5xl mb-16 text-center md:text-left w-full md:w-auto md:mb-0">
             Verity
@@ -283,14 +302,33 @@ const Home = () => {
                         )}
                         {detailUnit === "GWEI" && (
                           <span>
-                            {utils.formatUnits(tx["amount"], 9).toString().replace('.0', '')} GWEI
+                            {utils
+                              .formatUnits(tx["amount"], "gwei")
+                              .toString()
+                              .match(/[1-9][0-9]*(\.0)/)
+                              ? utils
+                                  .formatUnits(tx["amount"], "gwei")
+                                  .toString()
+                                  .replace(".0", "")
+                              : utils
+                                  .formatUnits(tx["amount"], "gwei")
+                                  .toString()}{" "}
+                            GWEI
                           </span>
                         )}
                         {detailUnit === "ETH" && (
                           <span>
                             {utils
                               .formatUnits(tx["amount"], "ether")
-                              .toString()}{" "}
+                              .toString()
+                              .match(/[1-9][0-9]*(\.0)/)
+                              ? utils
+                                  .formatUnits(tx["amount"], "ether")
+                                  .toString()
+                                  .replace(".0", "")
+                              : utils
+                                  .formatUnits(tx["amount"], "ether")
+                                  .toString()}{" "}
                             ETH
                           </span>
                         )}
@@ -315,11 +353,7 @@ const Home = () => {
                     value={txaddr ? txaddr : "Waiting for confirmation"}
                     width="w-full"
                     hasCopy={txaddr && true}
-                    needsRefresh={needsRefresh}
-                    onRefresh={() => {
-                      console.log("hello world");
-                      refreshTX();
-                    }}
+                    spinner={refreshing}
                   />
                 </div>
                 <div className="w-full text-center">

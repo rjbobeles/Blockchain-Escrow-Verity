@@ -20,6 +20,9 @@ export default function useEscrow() {
   const [escrowErrors, setEscrowErrors] = useState<null | string>(null);
   const [smartEscrow, setSmartEscrow] = useState<null | Contract>(null);
   const [signer, setSigner] = useState<null | Signer>(null);
+  const [smartEscrowListen, setSmartEscrowListen] = useState<boolean>(false);
+
+  const [confirmed, setConfirmed] = useState<undefined | string>();
 
   useEffect(() => {
     if (provider !== null && config !== null) {
@@ -35,16 +38,31 @@ export default function useEscrow() {
     }
   }, [web3UserAddress, provider]);
 
-  if (isWindowLoaded && smartEscrow !== null && signer !== null) {
-    smartEscrow
-      .connect(signer)
-      .on(
-        "escrowTransactionCreated",
-        async (transaction_id, escrowContract, seller, event) => {
-          console.error(transaction_id)
-        }
+  useEffect(() => {
+    if (smartEscrow !== null)
+      console.log(
+        "listener count: " +
+          smartEscrow.listenerCount("escrowTransactionCreated")
       );
-  }
+  });
+
+  useEffect(() => {
+    if (isWindowLoaded && smartEscrow !== null && signer !== null) {
+      if (smartEscrowListen) {
+        smartEscrow
+          .connect(signer)
+          .on(
+            "escrowTransactionCreated",
+            async (transaction_id, escrowContract, seller, event) => {
+              console.error(transaction_id);
+              setConfirmed(transaction_id);
+            }
+          );
+      } else {
+        smartEscrow.connect(signer).removeAllListeners();
+      }
+    }
+  }, [smartEscrowListen]);
 
   const preChecks = () => {
     setEscrowErrors(null);
@@ -120,6 +138,7 @@ export default function useEscrow() {
       await smartEscrow
         .connect(signer)
         .createEscrowTransaction(txID, web3UserAddress[0], amt);
+      setSmartEscrowListen(true);
       return txID;
     } catch (err) {
       console.error(err);
@@ -211,6 +230,8 @@ export default function useEscrow() {
     escrowDetails,
     escrowErrors,
     setEscrowErrors,
+    confirmed,
+    setSmartEscrowListen,
   };
 }
 

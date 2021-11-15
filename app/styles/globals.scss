@@ -40,6 +40,12 @@ input[type="number"] {
   width: 736px;
   max-width: 95%;
 
+  .detail-spinner {
+    circle {
+      stroke: #28bda2;
+    }
+  }
+
   .card {
     width: 48.5%;
     max-width: 100%;
