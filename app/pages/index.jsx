@@ -73,6 +73,7 @@ const Home = () => {
   };
 
   const getTX = async () => {
+    setErr();
     const q = document.getElementById("escrow-id").value;
     if (q !== txId && q !== txAddr) {
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
