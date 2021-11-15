@@ -33,3 +33,16 @@
 - Tested with **Metamask Wallet only**.
 - At least 2 accounts needed to carry out a transaction (Buyer, Seller).
 - While override is implemented in the contract, the app **does not have admin functionality**.
+
+## Credits
+
+This application is a project as a partial requirement for BKCHAIN 1T A.Y 21-22.
+
+Developers:
+- Gel Gamoras
+- Ryan Obeles
+- Franchesca Teng
+
+***
+
+Copyright &copy; Bentobox Sol 2021. All rights reserved.
