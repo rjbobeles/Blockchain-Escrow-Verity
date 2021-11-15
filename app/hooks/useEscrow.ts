@@ -26,9 +26,7 @@ export default function useEscrow() {
 
   useEffect(() => {
     if (provider !== null && config !== null) {
-      setSmartEscrow(
-        new Contract(config.SMART_ESCROW_ADDRESS, SmartEscrow.abi)
-      );
+      setSmartEscrow(new Contract(config.SMART_ESCROW_ADDRESS, SmartEscrow.abi));
     }
   }, [provider, config]);
 
@@ -39,38 +37,24 @@ export default function useEscrow() {
   }, [web3UserAddress, provider]);
 
   useEffect(() => {
-    if (smartEscrow !== null)
-      console.log(
-        "listener count: " +
-          smartEscrow.listenerCount("escrowTransactionCreated")
-      );
-  });
-
-  useEffect(() => {
     if (isWindowLoaded && smartEscrow !== null && signer !== null) {
       if (smartEscrowListen) {
         smartEscrow
           .connect(signer)
-          .on(
-            "escrowTransactionCreated",
-            async (transaction_id, escrowContract, seller, event) => {
-              console.error(transaction_id);
-              setConfirmed(transaction_id);
-            }
-          );
+          .on("escrowTransactionCreated", async (transaction_id, escrowContract, seller, event) => {
+            setConfirmed(transaction_id);
+          });
       } else {
         smartEscrow.connect(signer).removeAllListeners();
       }
     }
-  }, [smartEscrowListen]);
+  }, [smartEscrowListen, isWindowLoaded, signer, smartEscrow]);
 
   const preChecks = () => {
     setEscrowErrors(null);
 
     if (provider === null) {
-      setEscrowErrors(
-        "No wallet found. Use a browser that supports ethereum wallets"
-      );
+      setEscrowErrors("No wallet found. Use a browser that supports ethereum wallets");
       return false;
     }
 
@@ -83,61 +67,33 @@ export default function useEscrow() {
   };
 
   const fetchTransactionByAddress = async (transaction_address: string) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
-      return await smartEscrow
-        .connect(signer)
-        .transactions_id(transaction_address);
+      return await smartEscrow.connect(signer).transactions_id(transaction_address);
     } catch (err) {
-      console.log(err);
-      console.log("Does not exist");
+      console.error(err);
       setEscrowErrors("Sorry, that transaction does not exist");
     }
   };
 
   const fetchTransactionById = async (transaction_id: string) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
       return await smartEscrow.connect(signer).transactions(transaction_id);
     } catch (err) {
       console.error(err);
-      console.log("Does not exist");
       setEscrowErrors("Sorry, that transaction does not exist");
     }
   };
 
   const createEscrowTransaction = async (amt: number) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
-      const txID = `0x${crypto
-        .createHash("sha256")
-        .update(`${uuid()}`)
-        .update(`${Date.now()}`)
-        .digest("hex")}`;
-      await smartEscrow
-        .connect(signer)
-        .createEscrowTransaction(txID, web3UserAddress[0], amt);
+      const txID = `0x${crypto.createHash("sha256").update(`${uuid()}`).update(`${Date.now()}`).digest("hex")}`;
+      await smartEscrow.connect(signer).createEscrowTransaction(txID, web3UserAddress[0], amt);
       setSmartEscrowListen(true);
       return txID;
     } catch (err) {
@@ -149,9 +105,7 @@ export default function useEscrow() {
     if (!preChecks() || provider === null || signer === null) return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(
-        signer
-      );
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer);
       const escrowDetails = await escrow.escrowInfo();
 
       setEscrowDetails(escrowDetails);
@@ -163,18 +117,10 @@ export default function useEscrow() {
   };
 
   const joinTransaction = async (transaction_address: string, amt: number) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(
-        signer
-      );
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer);
       await escrow.join({ value: amt });
     } catch (err) {
       console.error(err);
@@ -182,18 +128,10 @@ export default function useEscrow() {
   };
 
   const releaseTransaction = async (transaction_address: string) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(
-        signer
-      );
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer);
       await escrow.release();
     } catch (err) {
       console.error(err);
@@ -201,18 +139,10 @@ export default function useEscrow() {
   };
 
   const refundTransaction = async (transaction_address: string) => {
-    if (
-      !preChecks() ||
-      smartEscrow === null ||
-      provider === null ||
-      signer === null
-    )
-      return;
+    if (!preChecks() || smartEscrow === null || provider === null || signer === null) return;
 
     try {
-      const escrow = new Contract(transaction_address, Escrow.abi).connect(
-        signer
-      );
+      const escrow = new Contract(transaction_address, Escrow.abi).connect(signer);
       await escrow.refund();
     } catch (err) {
       console.error(err);

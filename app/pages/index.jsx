@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { utils } from "ethers";
 
 import InputField from "../components/InputField";
 import Button from "../components/Button.jsx";
@@ -11,22 +12,11 @@ import { buttonLabel, status } from "../lib/constants";
 import { useEscrowProvider } from "../hooks/useEscrow";
 import { useWeb3Provider } from "../hooks/useWeb3";
 import { useConfigProvider } from "../hooks/useConfig";
-import { useRouter } from "next/dist/client/router";
 
-import { utils } from "ethers";
+import Escrow from "../contracts/Escrow.sol/Escrow.json";
 
 const Home = () => {
   const { config } = useConfigProvider();
-  const router = useRouter();
-
-  const [tx, setTx] = useState();
-  const [isTxLoaded, setIsTxLoaded] = useState();
-  const [viewingAs, setViewingAs] = useState();
-  const [detailUnit, setDetailUnit] = useState("WEI");
-  const [err, setErr] = useState();
-  const [refreshing, setRefreshing] = useState();
-  const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
-
   const {
     createEscrowTransaction,
     fetchTransactionByAddress,
@@ -40,15 +30,19 @@ const Home = () => {
     setSmartEscrowListen,
   } = useEscrowProvider();
 
-  const {
-    connectWeb3Wallet,
-    isWeb3AccountsLoaded,
-    web3UserAddress,
-    web3Errors,
-  } = useWeb3Provider();
+  const [tx, setTx] = useState();
+  const [isTxLoaded, setIsTxLoaded] = useState();
+  const [viewingAs, setViewingAs] = useState();
+  const [detailUnit, setDetailUnit] = useState("WEI");
+  const [err, setErr] = useState();
+  const [refreshing, setRefreshing] = useState();
+  const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
+  const { connectWeb3Wallet, isWeb3AccountsLoaded, web3UserAddress, web3Errors, signer } = useWeb3Provider();
 
-  const [txid, setTxID] = useState();
-  const [txaddr, setTxAddr] = useState();
+  const [txId, setTxID] = useState();
+  const [txAddr, setTxAddr] = useState();
+  const [escrowListen, setEscrowListen] = useState(false);
+  const [escrow, setEscrow] = useState(null);
 
   const [createError, setCreateError] = useState();
 
@@ -75,29 +69,25 @@ const Home = () => {
 
   const getTX = async () => {
     const q = document.getElementById("escrow-id").value;
-    if (q !== txid && q !== txaddr) {
+    if (q !== txId && q !== txAddr) {
       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
-        console.log("world");
         setIsTxLoaded(false);
         const addr = await fetchTransactionById(q);
-        if (addr === "")
-          return setErr("Sorry, that transaction does not exist.");
+        if (addr === "") return setErr("Sorry, that transaction does not exist.");
         setTxID(q);
       } else if (q.match(/^0x[a-fA-F0-9]{40}$/)) {
-        console.log("earth");
         setIsTxLoaded(false);
         const id = await fetchTransactionByAddress(q);
         if (id === "") return setErr("Sorry, that transaction does not exist.");
         setTxID(id);
       } else {
-        console.log("xyz");
         setErr("Invalid ID or address");
       }
     }
   };
 
   const refreshTX = async () => {
-    const address = await fetchTransactionById(txid);
+    const address = await fetchTransactionById(txId);
     if (address === "0x0" || address === "") return;
     setTxAddr(address);
 
@@ -109,35 +99,29 @@ const Home = () => {
   };
 
   const buttonHandler = async () => {
-    console.log(tx["escrowStatus"]);
     if (viewingAs === "buyer") {
       if (tx["escrowStatus"] === 0) {
-        await joinTransaction(txaddr, tx["amount"].toString());
+        await joinTransaction(txAddr, tx["amount"].toString());
         setStatusNeedsRefresh(true);
       } else if (tx["escrowStatus"] === 1) {
-        await releaseTransaction(txaddr);
+        await releaseTransaction(txAddr);
         setStatusNeedsRefresh(true);
       }
     } else if (viewingAs === "seller") {
       if (tx["escrowStatus"] === 0) {
-        navigator.clipboard.writeText(txid);
+        navigator.clipboard.writeText(txId);
       } else if (tx["escrowStatus"] === 1) {
-        await refundTransaction(txaddr);
+        await refundTransaction(txAddr);
         setStatusNeedsRefresh(true);
       }
     }
   };
 
   useEffect(() => {
-    console.log("Fetching details...");
-    console.log(txid);
-    console.log(isTxLoaded);
-    console.log(escrowErrors);
-    if (txid && !isTxLoaded && escrowErrors === null) {
+    if (txId && !isTxLoaded && escrowErrors === null) {
       const fetchDetails = async () => {
-        const address = await fetchTransactionById(txid);
-        if (address === "0x0" || address === "")
-          return setErr("Sorry, that transaction does not exist.");
+        const address = await fetchTransactionById(txId);
+        if (address === "0x0" || address === "") return setErr("Sorry, that transaction does not exist.");
         setTxAddr(address);
         const details = await fetchTransactionDetails(address);
         setTx(details);
@@ -146,24 +130,19 @@ const Home = () => {
 
       fetchDetails();
     }
-  }, [txid]);
+  }, [txId]);
 
   useEffect(() => {
     if (isTxLoaded && escrowErrors === null) {
       const v =
         web3UserAddress[0].toLowerCase() === tx["seller"].toLowerCase()
           ? "seller"
-          : tx["escrowStatus"] == 0 ||
-            tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
+          : tx["escrowStatus"] == 0 || tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
           ? "buyer"
           : "outsider";
       setViewingAs(v);
     }
   }, [isTxLoaded]);
-
-  useEffect(() => {
-    if (tx) console.log(tx);
-  }, [tx]);
 
   useEffect(() => {
     if (isWeb3AccountsLoaded) {
@@ -178,10 +157,40 @@ const Home = () => {
       setSmartEscrowListen(false);
     };
 
-    if (txid && confirmed === txid) {
+    if (txId && confirmed === txId) {
       fetch();
     }
   }, [confirmed]);
+
+  useEffect(() => {
+    if (txAddr) {
+      setEscrow(new Contract(txAddr, Escrow.abi));
+    }
+  }, [txAddr, setEscrow]);
+
+  useEffect(() => {
+    if (signer !== null && escrow !== null) {
+      if (escrowListen) {
+        escrow.connect(signer).on("buyerJoined", async (buyer, event) => {
+          console.error("CALLED");
+        });
+
+        escrow.connect(signer).on("balanceRefunded", async (event) => {
+          console.error("CALLED");
+        });
+
+        escrow.connect(signer).on("balanceReleased", async (event) => {
+          console.error("CALLED");
+        });
+
+        escrow.connect(signer).on("transactionOverridden", async (event) => {
+          console.error("CALLED");
+        });
+      } else {
+        escrow.connect(signer).removeAllListeners();
+      }
+    }
+  }, [escrowListen, escrow, signer]);
 
   if (!config) return <div></div>;
 
@@ -189,9 +198,7 @@ const Home = () => {
     <div className="flex justify-center items-center w-full min-h-screen">
       <main id="verity" className="my-24 md:mt-0 md:mb-36">
         <header className="w-full flex flex-col md:flex-row justify-start md:justify-between mb-8 items-start md:items-end">
-          <h3 className="text-ink pacifico text-5xl mb-16 text-center md:text-left w-full md:w-auto md:mb-0">
-            Verity
-          </h3>
+          <h3 className="text-ink pacifico text-5xl mb-16 text-center md:text-left w-full md:w-auto md:mb-0">Verity</h3>
           {isWeb3AccountsLoaded && (
             <form
               noValidate="novalidate"
@@ -243,9 +250,7 @@ const Home = () => {
                 />
                 <div className="my-8 text-center quicksand-medium text-sidewalk text-sm">
                   By creating a transaction, you agree with Verity{"'s "}
-                  <span className="quicksand-semibold text-green">
-                    Terms of Service
-                  </span>
+                  <span className="quicksand-semibold text-green">Terms of Service</span>
                 </div>
                 <Button
                   label="Create transaction"
@@ -297,22 +302,15 @@ const Home = () => {
                     </label>
                     <div className="flex flex-row items-center">
                       <p className="truncate quicksand-semibold text-lg text-ink">
-                        {detailUnit === "WEI" && (
-                          <span>{tx["amount"].toString()} WEI</span>
-                        )}
+                        {detailUnit === "WEI" && <span>{tx["amount"].toString()} WEI</span>}
                         {detailUnit === "GWEI" && (
                           <span>
                             {utils
                               .formatUnits(tx["amount"], "gwei")
                               .toString()
                               .match(/[1-9][0-9]*(\.0)/)
-                              ? utils
-                                  .formatUnits(tx["amount"], "gwei")
-                                  .toString()
-                                  .replace(".0", "")
-                              : utils
-                                  .formatUnits(tx["amount"], "gwei")
-                                  .toString()}{" "}
+                              ? utils.formatUnits(tx["amount"], "gwei").toString().replace(".0", "")
+                              : utils.formatUnits(tx["amount"], "gwei").toString()}{" "}
                             GWEI
                           </span>
                         )}
@@ -322,13 +320,8 @@ const Home = () => {
                               .formatUnits(tx["amount"], "ether")
                               .toString()
                               .match(/[1-9][0-9]*(\.0)/)
-                              ? utils
-                                  .formatUnits(tx["amount"], "ether")
-                                  .toString()
-                                  .replace(".0", "")
-                              : utils
-                                  .formatUnits(tx["amount"], "ether")
-                                  .toString()}{" "}
+                              ? utils.formatUnits(tx["amount"], "ether").toString().replace(".0", "")
+                              : utils.formatUnits(tx["amount"], "ether").toString()}{" "}
                             ETH
                           </span>
                         )}
@@ -336,31 +329,20 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row">
-                    <Detail
-                      label="Status"
-                      value={status[tx["escrowStatus"]]}
-                      width="w-full sm:w-1/2 sm:mr-1"
-                    />
-                    <Detail
-                      label="ID"
-                      value={txid}
-                      width="w-full sm:w-1/2 sm:ml-1"
-                      hasCopy={true}
-                    />
+                    <Detail label="Status" value={status[tx["escrowStatus"]]} width="w-full sm:w-1/2 sm:mr-1" />
+                    <Detail label="ID" value={txId} width="w-full sm:w-1/2 sm:ml-1" hasCopy={true} />
                   </div>
                   <Detail
                     label="ETH Address"
-                    value={txaddr ? txaddr : "Waiting for confirmation"}
+                    value={txAddr ? txAddr : "Waiting for confirmation"}
                     width="w-full"
-                    hasCopy={txaddr && true}
+                    hasCopy={txAddr && true}
                     spinner={refreshing}
                   />
                 </div>
                 <div className="w-full text-center">
                   {tx["escrowStatus"] > 1 ? (
-                    <span className="quicksand-medium text-sidewalk">
-                      {status[tx["escrowStatus"]]}
-                    </span>
+                    <span className="quicksand-medium text-sidewalk">{status[tx["escrowStatus"]]}</span>
                   ) : viewingAs === "outsider" ? (
                     ""
                   ) : statusNeedsRefresh ? (
@@ -378,14 +360,8 @@ const Home = () => {
                     <Button
                       label={buttonLabel[viewingAs][tx["escrowStatus"]]}
                       color="primary"
-                      appearance={
-                        buttonLabel[viewingAs][tx["escrowStatus"]] === "Cancel"
-                          ? "outline"
-                          : "solid"
-                      }
-                      barShadow={
-                        buttonLabel[viewingAs][tx["escrowStatus"]] !== "Cancel"
-                      }
+                      appearance={buttonLabel[viewingAs][tx["escrowStatus"]] === "Cancel" ? "outline" : "solid"}
+                      barShadow={buttonLabel[viewingAs][tx["escrowStatus"]] !== "Cancel"}
                       onClick={() => {
                         buttonHandler();
                       }}
@@ -397,9 +373,7 @@ const Home = () => {
             ) : (
               <div className="card no-transaction-selected order-1 md:order-2 mb-8 md:mb-0 flex flex-col items-center justify-center">
                 <div>
-                  <h5 className="quicksand-bold text-xl text-nikko text-center">
-                    No transaction selected
-                  </h5>
+                  <h5 className="quicksand-bold text-xl text-nikko text-center">No transaction selected</h5>
                   <p className="quicksand-medium text-sm text-sidewalk text-center">
                     Create or search for a transaction to get started
                   </p>
@@ -409,9 +383,7 @@ const Home = () => {
           </div>
         ) : (
           <div className="w-full my-20 flex flex-col items-center text-center">
-            <h5 className="quicksand-bold text-xl text-nikko text-center mb-2">
-              No account detected
-            </h5>
+            <h5 className="quicksand-bold text-xl text-nikko text-center mb-2">No account detected</h5>
             <p className="quicksand-medium text-sm text-sidewalk text-center mb-6">
               Please connect your Metamask wallet to use Verity
             </p>
@@ -428,12 +400,170 @@ const Home = () => {
           </div>
         )}
 
-        <div className="w-full text-center quicksand-medium text-faded mt-20">
-          bentobox sol.
-        </div>
+        <div className="w-full text-center quicksand-medium text-faded mt-20">bentobox sol.</div>
       </main>
     </div>
   );
 };
 
 export default Home;
+
+// import { useEffect, useState } from "react";
+// import { utils, Contract } from "ethers";
+
+// import InputField from "../components/InputField";
+// import Button from "../components/Button.jsx";
+// import Detail from "../components/Detail.jsx";
+// import { FaEthereum } from "react-icons/fa";
+// import { FiSearch } from "react-icons/fi";
+
+// import { buttonLabel, status } from "../lib/constants";
+
+// import { useEscrowProvider } from "../hooks/useEscrow";
+// import { useWeb3Provider } from "../hooks/useWeb3";
+// import { useConfigProvider } from "../hooks/useConfig";
+
+// const Home = () => {
+//   const { config } = useConfigProvider();
+//   const { connectWeb3Wallet, isWeb3AccountsLoaded, web3UserAddress, web3Errors, signer } = useWeb3Provider();
+
+//   const [tx, setTx] = useState();
+//   const [isTxLoaded, setIsTxLoaded] = useState();
+//   const [viewingAs, setViewingAs] = useState();
+//   const [detailUnit, setDetailUnit] = useState("WEI");
+//   const [err, setErr] = useState();
+//   const [refreshing, setRefreshing] = useState();
+//   const [statusNeedsRefresh, setStatusNeedsRefresh] = useState();
+//   const [txId, setTxID] = useState();
+//   const [txAddr, setTxAddr] = useState();
+//   const [createError, setCreateError] = useState();
+
+//   const {
+//     createEscrowTransaction,
+//     fetchTransactionByAddress,
+//     fetchTransactionById,
+//     fetchTransactionDetails,
+//     escrowErrors,
+//     joinTransaction,
+//     releaseTransaction,
+//     refundTransaction,
+//     confirmed,
+//     setSmartEscrowListen,
+//   } = useEscrowProvider();
+
+//   const createTX = async () => {
+//     setCreateError();
+//     const amount = document.getElementById("amount").value;
+//     const unit = document.querySelector('input[name="unit"]').value;
+//     if (!amount) return setCreateError("Please enter an amount");
+//     const amountInWei = utils.parseUnits(amount, unit);
+//     const id = await createEscrowTransaction(amountInWei);
+//     if (id) {
+//       setTx({
+//         amount: amountInWei,
+//         escrowStatus: 0,
+//         seller: web3UserAddress[0],
+//         buyer: "0x0",
+//       });
+//       setTxAddr();
+//       setIsTxLoaded(true);
+//       setTxID(id);
+//       setRefreshing(true);
+//     }
+//   };
+
+//   const getTX = async () => {
+//     const q = document.getElementById("escrow-id").value;
+//     if (q !== txId && q !== txAddr) {
+//       if (q.match(/^0x[a-fA-F0-9]{64}$/)) {
+//         setIsTxLoaded(false);
+//         const addr = await fetchTransactionById(q);
+//         if (addr === "") return setErr("Sorry, that transaction does not exist.");
+//         setTxID(q);
+//       } else if (q.match(/^0x[a-fA-F0-9]{40}$/)) {
+//         setIsTxLoaded(false);
+//         const id = await fetchTransactionByAddress(q);
+//         if (id === "") return setErr("Sorry, that transaction does not exist.");
+//         setTxID(id);
+//       } else {
+//         setErr("Invalid ID or address");
+//       }
+//     }
+//   };
+
+//   const refreshTX = async () => {
+//     const address = await fetchTransactionById(txId);
+//     if (address === "0x0" || address === "") return;
+//     setTxAddr(address);
+
+//     const details = await fetchTransactionDetails(address);
+//     setTx(details);
+
+//     setIsTxLoaded(true);
+//     if (statusNeedsRefresh) setStatusNeedsRefresh(false);
+//   };
+
+//   const buttonHandler = async () => {
+//     if (viewingAs === "buyer") {
+//       if (tx["escrowStatus"] === 0) {
+//         await joinTransaction(txAddr, tx["amount"].toString());
+//         setStatusNeedsRefresh(true);
+//       } else if (tx["escrowStatus"] === 1) {
+//         await releaseTransaction(txAddr);
+//         setStatusNeedsRefresh(true);
+//       }
+//     } else if (viewingAs === "seller") {
+//       if (tx["escrowStatus"] === 0) {
+//         navigator.clipboard.writeText(txId);
+//       } else if (tx["escrowStatus"] === 1) {
+//         await refundTransaction(txAddr);
+//         setStatusNeedsRefresh(true);
+//       }
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (txId && !isTxLoaded && escrowErrors === null) {
+//       const fetchDetails = async () => {
+//         const address = await fetchTransactionById(txId);
+//         if (address === "0x0" || address === "") return setErr("Sorry, that transaction does not exist.");
+//         setTxAddr(address);
+//         const details = await fetchTransactionDetails(address);
+//         setTx(details);
+//         setIsTxLoaded(true);
+//       };
+
+//       fetchDetails();
+//     }
+//   }, [txId, isTxLoaded, escrowErrors, fetchTransactionById, fetchTransactionDetails]);
+
+//   useEffect(() => {
+//     if (isTxLoaded && escrowErrors === null) {
+//       const v =
+//         web3UserAddress[0].toLowerCase() === tx["seller"].toLowerCase()
+//           ? "seller"
+//           : tx["escrowStatus"] == 0 || tx["buyer"].toLowerCase() === web3UserAddress[0].toLowerCase()
+//           ? "buyer"
+//           : "outsider";
+//       setViewingAs(v);
+//     }
+//   }, [isTxLoaded, escrowErrors, tx, web3UserAddress]);
+
+//   useEffect(() => {
+//     if (isWeb3AccountsLoaded) {
+//       location.reload();
+//     }
+//   }, [web3UserAddress, isWeb3AccountsLoaded]);
+
+//   useEffect(() => {
+//     const fetch = async () => {
+//       await refreshTX();
+//       setRefreshing(false);
+//       setSmartEscrowListen(false);
+//     };
+
+//     if (txId && confirmed === txId) {
+//       fetch();
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [confirmed, setSmartEscrowListen, txId]);
