@@ -1,4 +1,6 @@
 # Verity: An Ethereum Ether Escrow Platform
+<br/>
+<img src="https://github.com/rjbobeles/Blockchain-Escrow-Verity/blob/main/verity.png?raw=true" width="200"/>
 
 ## Environment Variables
 
