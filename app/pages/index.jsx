@@ -55,6 +55,7 @@ const Home = () => {
     const amount = document.getElementById("amount").value;
     const unit = document.querySelector('input[name="unit"]').value;
     if (!amount) return setCreateError("Please enter an amount");
+    if (!amount.match(/^([1-9]\d*(.\d+)?)$|^(0(.\d+)+)$/)) return setCreateError("Please enter a valid amount")
     const amountInWei = utils.parseUnits(amount, unit);
     const id = await createEscrowTransaction(amountInWei);
     if (id) {
