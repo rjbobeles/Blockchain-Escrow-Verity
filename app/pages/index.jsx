@@ -147,7 +147,8 @@ const Home = () => {
           ? "buyer"
           : "outsider";
       setViewingAs(v);
-    }
+      setEscrowListen(true);
+    } else setEscrowListen(false);
   }, [isTxLoaded]);
 
   useEffect(() => {
@@ -179,21 +180,18 @@ const Home = () => {
       await refreshTX();
       setTxRefreshing(false);
     };
+
     if (signer !== null && escrow !== null) {
       if (escrowListen) {
-        console.log(signer);
         escrow.connect(signer).on("balanceReleased", async (event) => {
-          console.error("CALLED3");
           fetch();
         });
 
         escrow.connect(signer).on("buyerJoined", async (buyer, event) => {
-          console.error("CALLED1");
           fetch();
         });
 
         escrow.connect(signer).on("balanceRefunded", async (event) => {
-          console.error("CALLED2");
           fetch();
         });
       } else {
