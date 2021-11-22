@@ -8,7 +8,13 @@ const Detail = ({ label, value, hasCopy, width, spinner, onRefresh }) => {
     <div className={`${width} mb-3`}>
       <label className="quicksand text-sidewalk text-sm">{label}</label>
       <div className="flex flex-row items-center">
-        <p className={`${label === "Status" && "capitalize"} truncate quicksand-semibold text-lg text-ink`}>{value}</p>
+        <p
+          className={`${
+            (label === "Status" || label === "Role") && "capitalize"
+          } truncate quicksand-semibold text-lg text-ink`}
+        >
+          {value}
+        </p>
         {hasCopy && !spinner && (
           <div
             className="ml-1 text-green cursor-pointer"

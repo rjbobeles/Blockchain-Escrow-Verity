@@ -55,7 +55,7 @@ const Home = () => {
     const amount = document.getElementById("amount").value;
     const unit = document.querySelector('input[name="unit"]').value;
     if (!amount) return setCreateError("Please enter an amount");
-    if (!amount.match(/^([1-9]\d*(.\d+)?)$|^(0(.\d+)+)$/)) return setCreateError("Please enter a valid amount")
+    if (!amount.match(/^([1-9]\d*(.\d+)?)$|^(0(.\d+)+)$/)) return setCreateError("Please enter a valid amount");
     const amountInWei = utils.parseUnits(amount, unit);
     const id = await createEscrowTransaction(amountInWei);
     if (id) {
@@ -236,11 +236,17 @@ const Home = () => {
         )}
 
         {isWeb3AccountsLoaded ? (
-          <div className="flex flex-col items-center md:items-stretch md:flex-row justify-between">
+          <div
+            className={`flex flex-col items-center ${
+              tx && isTxLoaded && viewingAs && !escrowErrors ? "md:items-start" : "md:items-stretch"
+            } md:flex-row justify-between`}
+          >
             <div className="card order-2 md:order-1 flex flex-row items-stretch">
               <form
                 noValidate="novalidate"
-                className="flex flex-col justify-between"
+                className={`flex flex-col ${
+                  tx && isTxLoaded && viewingAs && !escrowErrors ? "justify-center" : "justify-between"
+                } `}
                 onSubmit={(e) => {
                   e.preventDefault();
                   createTX();
@@ -276,6 +282,11 @@ const Home = () => {
             {tx && isTxLoaded && viewingAs && !escrowErrors ? (
               <div className="card order-1 md:order-2 mb-8 md:mb-0 flex flex-col justify-between">
                 <div className="mb-8">
+                  {viewingAs !== "outsider" && (
+                    <h3 className="quicksand-bold text-ink text-2xl mb-4">
+                      You are the <span className="text-green">{viewingAs}</span>
+                    </h3>
+                  )}
                   <div className="w-full mb-3">
                     <label className="quicksand text-sidewalk text-sm flex flex-row items-center">
                       Amount<span className="mx-2">—</span>
